@@ -11,29 +11,45 @@ npm install
 npm run dev      # http://localhost:5173
 npm run build    # type check and production build in dist/
 npm run lint
+npm test         # unit tests (vitest)
 ```
 
-## How the app is shown
+## App and emulator are two separate pages
 
-| Where | What you see |
+| Page | Entry | What it is |
+| --- | --- | --- |
+| `app.html` | `src/app/main.tsx` | The Saldo app. This is the only thing you change to change the app. |
+| `index.html` | `src/emulator/main.tsx` | The device emulator. It loads `app.html` in an iframe inside a phone frame. |
+
+The two folders do not import each other. `npm run lint` fails if the emulator imports code from `src/app`, or the app imports code from `src/emulator`. The only link between them is:
+
+- the emulator loads `./app.html` (`APP_URL` in `src/emulator/Emulator.tsx`), and
+- the emulator sets the CSS variables `--safe-top`, `--safe-right`, `--safe-bottom` and `--safe-left` on the app's `<html>`, because `env(safe-area-inset-*)` is 0 inside an iframe. Without the emulator they fall back to `env()`.
+
+To remove the emulator, delete `src/emulator/` and `index.html`, rename `app.html` to `index.html`, and remove the `input` block in `vite.config.ts`.
+
+| URL | What you see |
 | --- | --- |
-| Phone or narrow window | The app, full screen |
-| Desktop (wider than 900 px) | A device emulator with the app inside a phone frame |
-| `?app=1` | The bare app at any width |
-| `?start=onboarding` | Start in onboarding instead of the home screen |
+| `/` on desktop (wider than 900 px) | The emulator with the app inside |
+| `/` on a phone or narrow window | Sends you to `app.html` |
+| `/app.html` | The bare app at any width |
+| `?start=onboarding` (on `/` or `/app.html`) | The app, starting in onboarding |
 
-The emulator runs the real app in an iframe at the device's screen size. Use the toolbar to change device (iPhone 15 Pro is the default, same frame as the prototype), turn it to landscape, switch between "fit to window" and 100 %, reload, or open the app in a new tab. The emulator sends the device's safe area to the app, because `env(safe-area-inset-*)` is 0 inside an iframe.
+The choice between emulator and bare app is made once, when `/` loads. Resizing the window after that does not switch it.
+
+In the emulator toolbar you can change device (iPhone 15 Pro is the default, same frame as the prototype), turn it to landscape, switch between "fit to window" and 100 %, reload, or open the app in a new tab. Add devices in `src/emulator/devices.ts`.
 
 ## Code map
 
 | Path | Contents |
 | --- | --- |
-| `src/app/` | Home screen, add-transaction sheet, settings sheet |
-| `src/onboarding/` | The 6 onboarding steps |
-| `src/emulator/` | Device emulator and the device list (`devices.ts`) |
-| `src/components/` | Icons and small shared UI parts |
-| `src/lib/` | Formatting, tax estimate, example data and forecast |
-| `src/index.css` | Team palette (Tailwind theme), heatmap colours, gradients |
+| `src/app/Saldo.tsx` | Top of the app: onboarding or home, and app state |
+| `src/app/home/` | Home screen, forecast chart, add-transaction and settings sheets |
+| `src/app/onboarding/` | The 6 onboarding steps |
+| `src/app/components/` | Icons and small shared UI parts |
+| `src/app/lib/` | Formatting, tax estimate, example data and forecast (with tests) |
+| `src/app/index.css` | Team palette (Tailwind theme), heatmap colours, gradients |
+| `src/emulator/` | Emulator, device list, its own icons and CSS |
 
 ## Live version
 

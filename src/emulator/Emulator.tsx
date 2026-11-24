@@ -1,7 +1,8 @@
-// Desktop preview: the real app runs in an iframe at the device's screen size, inside a device frame.
+// Desktop preview: the Saldo app (app.html) runs in an iframe at the device's screen size, inside a device frame.
 // Changing device or orientation resizes the iframe, so the app keeps its state.
+// The emulator never imports app code. Its only link to the app is APP_URL and the --safe-* CSS variables.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
-import { Icon } from '../components/Icon'
+import { Icon } from './icons'
 import { DEFAULT_DEVICE, DEVICES, rotate, type Device, type Insets } from './devices'
 
 const KEY = 'saldo:emulator'
@@ -11,8 +12,10 @@ const readPrefs = (): Prefs => {
   try { return { ...def, ...JSON.parse(localStorage.getItem(KEY) || '{}') } } catch { return def }
 }
 
-const appUrl = (safe: Insets) =>
-  `${import.meta.env.BASE_URL}?frame=1&safe=${[safe.top, safe.right, safe.bottom, safe.left].join(',')}`
+/** The app page, next to this one (works on localhost, GitHub Pages and in sub-folders). */
+export const APP_URL = './app.html'
+// Pass the emulator's query and hash (for example ?start=onboarding) on to the app.
+const appSrc = () => APP_URL + location.search + location.hash
 
 export function Emulator() {
   const [prefs, setPrefs] = useState(readPrefs)
@@ -25,7 +28,6 @@ export function Emulator() {
   const fw = sw + bezel.left + bezel.right
   const fh = sh + bezel.top + bezel.bottom
 
-  const [src] = useState(() => appUrl(safe))
   const [reloads, setReloads] = useState(0)
   const frameRef = useRef<HTMLIFrameElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
@@ -45,11 +47,25 @@ export function Emulator() {
     return () => ro.disconnect()
   }, [])
 
-  // env(safe-area-inset-*) is 0 inside an iframe, so tell the app the device's safe area.
-  const sendSafe = useCallback(() => {
-    frameRef.current?.contentWindow?.postMessage({ type: 'saldo:safe-area', ...safe }, location.origin)
+  // env(safe-area-inset-*) is 0 inside an iframe, so give the app the device's safe area
+  // through the same CSS variables a real phone fills in (--safe-top, --safe-right, ...).
+  const applySafe = useCallback(() => {
+    const root = frameRef.current?.contentDocument?.documentElement
+    if (!root) return
+    for (const k of ['top', 'right', 'bottom', 'left'] as const) root.style.setProperty(`--safe-${k}`, `${safe[k]}px`)
   }, [safe])
-  useEffect(sendSafe, [sendSafe])
+  // Set the safe areas as soon as app.html has a document, before its first paint.
+  // The load event alone is too late: it waits for fonts and other subresources.
+  useEffect(() => {
+    let id = 0
+    const tick = () => {
+      const doc = frameRef.current?.contentDocument
+      if (doc?.documentElement && doc.URL.includes('app.html')) applySafe()
+      else id = requestAnimationFrame(tick)
+    }
+    tick()
+    return () => cancelAnimationFrame(id)
+  }, [applySafe, reloads])
 
   const pad = 8 // room for the side buttons
   const scale = prefs.fit && stage.w ? Math.min(1, (stage.w - pad * 2) / fw, (stage.h - pad * 2) / fh) : 1
@@ -82,7 +98,7 @@ export function Emulator() {
           <span className="text-[13px] font-semibold">{prefs.fit ? `${Math.round(scale * 100)} %` : '100 %'}</span>
         </ToolButton>
         <ToolButton label="Last inn på nytt" onClick={() => setReloads((n) => n + 1)}><Icon name="reload" className="size-[18px]" /></ToolButton>
-        <a href={`${import.meta.env.BASE_URL}?app=1`} target="_blank" rel="noreferrer" title="Åpne appen i ny fane" aria-label="Åpne appen i ny fane"
+        <a href={appSrc()} target="_blank" rel="noreferrer" title="Åpne appen i ny fane" aria-label="Åpne appen i ny fane"
           className="grid h-9 min-w-9 place-items-center rounded-full bg-white/8 px-2.5 inset-ring inset-ring-white/14 hover:bg-white/12">
           <Icon name="external" className="size-[18px]" />
         </a>
@@ -93,7 +109,7 @@ export function Emulator() {
           <div className="absolute origin-top-left" style={{ left: pad, top: pad, width: fw, height: fh, transform: `scale(${scale})` }}>
             <Frame device={device} landscape={landscape} bezel={bezel} w={fw} h={fh} />
             <div className="absolute overflow-hidden bg-black" style={{ left: bezel.left, top: bezel.top, width: sw, height: sh, borderRadius: device.radius }}>
-              <iframe key={reloads} ref={frameRef} src={src} title={`Saldo på ${device.name}`} onLoad={sendSafe}
+              <iframe key={reloads} ref={frameRef} src={appSrc()} title={`Saldo på ${device.name}`} onLoad={applySafe}
                 className="block border-0" style={{ width: sw, height: sh }} />
               <Overlay device={device} landscape={landscape} />
             </div>

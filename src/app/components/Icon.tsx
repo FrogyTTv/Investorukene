@@ -19,9 +19,6 @@ const PATHS = {
   bus: (<><rect x="5" y="3.5" width="14" height="13" rx="3" /><path d="M5 11h14" /><circle cx="9" cy="14" r=".9" fill="currentColor" /><circle cx="15" cy="14" r=".9" fill="currentColor" /><path d="M8 20.5l1.3-4M16 20.5l-1.3-4" /></>),
   repeat: (<><path d="M4.5 12a7.5 7.5 0 0 1 13-5.1l2 2M19.5 4v5h-5" /><path d="M19.5 12a7.5 7.5 0 0 1-13 5.1l-2-2M4.5 20v-5h5" /></>),
   dots: (<><circle cx="6" cy="12" r="1.4" fill="currentColor" /><circle cx="12" cy="12" r="1.4" fill="currentColor" /><circle cx="18" cy="12" r="1.4" fill="currentColor" /></>),
-  rotate: (<><rect x="7" y="3.5" width="10" height="17" rx="2.5" {...D} /><path d="M3.5 9a8.5 8.5 0 0 1 3-4.5M3.5 4.5V9H8" /></>),
-  reload: <path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4v4h-4" />,
-  external: (<><path d="M13.5 4.5h6v6M19.5 4.5l-8 8" /><path d="M17.5 14v4a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V8A1.5 1.5 0 0 1 6 6.5h4" /></>),
 } satisfies Record<string, ReactNode>
 
 export type IconName = keyof typeof PATHS
