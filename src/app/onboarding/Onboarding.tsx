@@ -2,10 +2,11 @@
 // and the button is the same size on every step.
 import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { Heat, MoneyInput, Months, Seg, Stats, TaxBox, type HeatCell } from '../components/ui'
-import { EXPENSES, type Setup } from '../lib/data'
+import { perMonth, type Setup } from '../lib/data'
 import { kr, monthShort, rng, signedKr } from '../lib/format'
 import { dayVal, levels, MODES, simulate, type Mode } from '../lib/sim'
 import { netMonthly, taxPercent } from '../lib/tax'
+import { Bills, MonthDaySelect } from './Bills'
 
 const BUTTONS = ['Kom i gang', 'Neste', 'Neste', 'Vis kartet mitt', 'Fullfør', 'Gå til appen']
 const LAST = BUTTONS.length - 1
@@ -47,7 +48,7 @@ export function Onboarding({ setup, onChange, mode, onMode, onDone }: Props) {
   const scroller = useRef<HTMLDivElement>(null)
 
   const net = netMonthly(setup.gross)
-  const expTotal = EXPENSES.reduce((s, n) => s + setup.expenses[n], 0)
+  const expTotal = setup.bills.reduce((s, b) => s + perMonth(b), 0)
   const surplus = net - expTotal
   const months = surplus > 0 ? Math.ceil(setup.goalAmt / surplus) : Infinity
   const set = (patch: Partial<Setup>) => onChange({ ...setup, ...patch })
@@ -100,21 +101,15 @@ export function Onboarding({ setup, onChange, mode, onMode, onDone }: Props) {
             <Field label="Brutto månedslønn" htmlFor="gross"><MoneyInput id="gross" value={setup.gross} onChange={(gross) => set({ gross })} /></Field>
             <TaxBox gross={setup.gross} net={net} pct={taxPercent(setup.gross)} className="rounded-[10px] bg-cream/10 p-3.5" />
             <p className="text-xs text-muted">Forenklet estimat med 2025-satser: trygdeavgift, trinnskatt og 22 % skatt på alminnelig inntekt etter minstefradrag og personfradrag.</p>
+            <Field label="Hvilken dato får du lønn?" htmlFor="payDay"><MonthDaySelect id="payDay" value={setup.payDay} onChange={(payDay) => set({ payDay })} className="h-11" /></Field>
             <Field label="Hvor mye har du på konto nå?" htmlFor="saldo"><MoneyInput id="saldo" value={setup.saldo} onChange={(saldo) => set({ saldo })} /></Field>
           </>)}
 
           {step === 2 && (<>
             <H2>Faste utgifter</H2>
-            <Lead>Omtrentlige tall per måned holder. Du kan endre dem senere.</Lead>
-            <div className="flex flex-col gap-2.5 min-[960px]:grid min-[960px]:grid-cols-2 min-[960px]:gap-x-5">
-              {EXPENSES.map((n, i) => (
-                <label key={n} htmlFor={`e${i}`} className="grid grid-cols-[1fr_110px] items-center gap-2.5 min-[601px]:grid-cols-[1fr_130px] min-[960px]:grid-cols-[1fr_110px]">
-                  <span>{n}</span>
-                  <MoneyInput id={`e${i}`} value={setup.expenses[n]} onChange={(v) => set({ expenses: { ...setup.expenses, [n]: v } })} />
-                </label>
-              ))}
-            </div>
-            <Box bad={surplus < 0}><span>Igjen etter faste utgifter</span><b className="font-medium">{kr(surplus)}</b></Box>
+            <Lead>Skriv inn hva du betaler for, hvor mye hver gang, og når: en dato hver måned, eller dager hver uke.</Lead>
+            <Bills bills={setup.bills} onChange={(bills) => set({ bills })} />
+            <Box bad={surplus < 0}><span>Igjen per måned etter faste utgifter</span><b className="font-medium">{kr(surplus)}</b></Box>
           </>)}
 
           {step === 3 && (<>

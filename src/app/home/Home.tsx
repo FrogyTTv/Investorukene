@@ -2,10 +2,10 @@
 // The bottom tab bar (Hjem, Aktivitet, Prognose, Budsjett, Skatt) is removed for now.
 import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Icon, type IconName } from '../components/Icon'
-import { BigNum, Card, CatChip, Heat, Label, Months, Seg, TaxBox } from '../components/ui'
-import { CATEGORIES, EXPENSES, WEEKDAYS, type Setup } from '../lib/data'
+import { BigNum, Card, CatChip, Heat, Label, Seg, TaxBox } from '../components/ui'
+import { billOn, budgetOf, EXPENSES, isDayOfMonth, WEEKDAYS, type Setup } from '../lib/data'
 import { addDays, dayLabel, fmt, iso, kr, monthName, monthShort, signed, signedKr } from '../lib/format'
-import { balanceNow, balancesAt, booked, dayVal, levels, MODES, type Mode, type Tx, type Weekly } from '../lib/sim'
+import { balanceNow, balancesAt, booked, dayVal, forecast, levels, MODES, type Mode, type Tx, type Weekly } from '../lib/sim'
 import { netMonthly, taxPercent } from '../lib/tax'
 import { ForecastChart } from './ForecastChart'
 
@@ -27,6 +27,10 @@ const Row = ({ cat, title, sub, amount, fresh }: { cat: string; title: string; s
     <b className={`text-right font-semibold whitespace-nowrap ${amount > 0 ? 'text-green' : ''}`}>{signed(amount)}</b>
   </li>
 )
+
+// Heatmap: one year back, and FUTURE_WEEKS ahead as a forecast. Scroll sideways to see them.
+const PAST_WEEKS = 52
+const FUTURE_WEEKS = 13
 
 const Quick = ({ icon, onClick, children }: { icon: IconName; onClick: () => void; children: ReactNode }) => (
   <button type="button" onClick={onClick} className="group flex cursor-pointer flex-col items-center gap-2 p-0 text-[13px] font-medium">
@@ -56,41 +60,57 @@ export function Home({ setup, txs, weekly, freshId, mode, onMode, onAdd, onSetti
   const inM = month.reduce((a, t) => (t.amount > 0 ? a + t.amount : a), 0)
   const outM = month.reduce((a, t) => (t.amount < 0 ? a - t.amount : a), 0)
 
-  // Heatmap: last 52 weeks, Sunday-start columns, future days faded
+  // Heatmap: the past year and FUTURE_WEEKS ahead. Future days use the forecast and are a bit faded.
   const heat = useMemo(() => {
     const byDay: Record<string, { spend: number; income: number }> = {}
     for (const t of txs) {
+      if (t.date > todayK) continue
       const x = (byDay[t.date] ??= { spend: 0, income: 0 })
       if (t.amount < 0) x.spend -= t.amount
       else x.income += t.amount
     }
-    const end = addDays(new Date(), 6 - new Date().getDay())
-    const start = addDays(end, -52 * 7 + 1)
-    const keys = Array.from({ length: 52 * 7 }, (_, i) => iso(addDays(start, i)))
+    const ahead = new Map(forecast(setup, weekly, now, Math.ceil((FUTURE_WEEKS * 7) / 30) + 1, txs).map((p) => [p.k, p]))
+    const weeks = PAST_WEEKS + FUTURE_WEEKS
+    const end = addDays(new Date(), 6 - new Date().getDay() + FUTURE_WEEKS * 7)
+    const start = addDays(end, -weeks * 7 + 1)
+    const keys = Array.from({ length: weeks * 7 }, (_, i) => iso(addDays(start, i)))
     const bal = balancesAt(txs, now, todayK, keys.filter((k) => k <= todayK))
     const cells = keys.map((k) => {
+      if (k > todayK) {
+        const f = ahead.get(k)
+        return { k, future: true, v: f ? dayVal(mode, f.spend, f.income, f.v) : 0 }
+      }
       const x = byDay[k] ?? { spend: 0, income: 0 }
-      const future = k > todayK
-      return { k, future, v: future ? 0 : dayVal(mode, x.spend, x.income, bal.get(k)!) }
+      return { k, future: false, v: dayVal(mode, x.spend, x.income, bal.get(k)!) }
     })
     const lv = levels(cells.map((c) => c.v))
-    const names: string[] = []
-    for (let w = 0; w < 52; w += 4) { const n = monthShort(addDays(start, w * 7)); if (!names.includes(n)) names.push(n) }
-    return { cells: cells.map((c, i) => ({ l: lv[i], fut: c.future, title: `${dayLabel(c.k)}: ${signedKr(c.v)}` })), names }
-  }, [txs, mode, now, todayK])
+    // A month label over the first week column that starts in that month (the same month can show twice, one year apart).
+    const marks: { name: string; left: string }[] = []
+    for (let w = 0; w < weeks; w++) {
+      const d = addDays(start, w * 7)
+      if (d.getDate() <= 7) marks.push({ name: monthShort(d), left: `${(w / weeks) * 100}%` })
+    }
+    return {
+      cells: cells.map((c, i) => ({ l: lv[i], fut: c.future, now: c.k === todayK, title: `${dayLabel(c.k)}${c.future ? ' (prognose)' : ''}: ${signedKr(c.v)}` })),
+      marks,
+    }
+  }, [txs, weekly, setup, mode, now, todayK])
 
-  // Phones: start on the newest weeks, swipe back for history
+  // Start with today near the right edge, so the newest weeks show and a few weeks ahead peek in. Swipe either way.
   useLayoutEffect(() => {
     const el = heatRef.current
-    if (el) el.scrollLeft = el.scrollWidth
+    if (!el) return
+    const todayX = ((PAST_WEEKS - 0.5) / (PAST_WEEKS + FUTURE_WEEKS)) * el.scrollWidth
+    el.scrollLeft = todayX - el.clientWidth * 0.8
   }, [heat])
 
   // Budget this month
+  const plan = budgetOf(setup)
   const budget = EXPENSES.map((c) => {
-    const b = setup.expenses[c]
+    const b = plan[c]
     const used = -month.filter((t) => t.cat === c && t.amount < 0).reduce((a, t) => a + t.amount, 0)
     return { c, b, used, over: used > b }
-  })
+  }).filter((x) => x.b || x.used)
   const total = budget.reduce((a, x) => a + x.b, 0)
   const usedAll = budget.reduce((a, x) => a + x.used, 0)
 
@@ -99,20 +119,27 @@ export function Home({ setup, txs, weekly, freshId, mode, onMode, onAdd, onSetti
   const dl = (k: string) => (k === todayK ? 'I dag' : k === yK ? 'I går' : dayLabel(k))
   const list = booked(txs, todayK).sort((a, b) => b.date.localeCompare(a.date) || Number(!!b.mine) - Number(!!a.mine)).slice(0, txAll ? 20 : 3)
 
-  // Upcoming bills, pay and weekly entries
-  const dom = today.getDate()
-  const e = setup.expenses
+  // Upcoming: monthly bills, pay, and the user's own weekly and future entries. Weekly bills (like lunch) are left out, they happen all the time.
   const midnight = new Date(`${todayK}T00:00`).getTime()
-  const upcoming = ([
-    [1, 'Husleie', 'Husleie / lån', -e['Husleie / lån']],
-    [5, 'Strømmetjenester', 'Abonnementer', -e.Abonnementer],
-    [15, 'Strømregning', 'Strøm', -e.Strøm],
-    [20, 'Lønn', 'Lønn', net],
-  ] as [number, string, string, number][]).map(([d, name, cat, amount]) => {
-    const when = new Date(today.getFullYear(), today.getMonth() + (d < dom ? 1 : 0), d)
-    const days = Math.round((when.getTime() - midnight) / 864e5)
-    return { key: name, days, cat, name, amount, sub: `${days === 0 ? 'I dag' : days === 1 ? 'I morgen' : `Om ${days} dager`} · ${dayLabel(iso(when))}` }
-  }).concat(weekly.map((w, i) => {
+  // First day from today on which `due` is true, within about two months.
+  const nextDay = (due: (d: Date) => boolean) => {
+    for (let i = 0; i < 62; i++) { const d = addDays(new Date(`${todayK}T12:00`), i); if (due(d)) return d }
+    return null
+  }
+  const when = (d: Date) => {
+    const days = Math.round((new Date(`${iso(d)}T00:00`).getTime() - midnight) / 864e5)
+    return { days, label: `${days === 0 ? 'I dag' : days === 1 ? 'I morgen' : `Om ${days} dager`} · ${dayLabel(iso(d))}` }
+  }
+  const fixed = [
+    ...setup.bills.filter((b) => b.repeat === 'monthly').map((b) => ({ key: `b${b.id}`, name: b.name.trim() || b.cat, cat: b.cat as string, amount: -b.amount, due: (d: Date) => billOn(b, d) })),
+    { key: 'pay', name: 'Lønn', cat: 'Lønn', amount: net, due: (d: Date) => isDayOfMonth(setup.payDay, d) },
+  ].flatMap((f) => {
+    const d = f.amount ? nextDay(f.due) : null
+    if (!d) return []
+    const w = when(d)
+    return [{ key: f.key, days: w.days, cat: f.cat, name: f.name, amount: f.amount, sub: w.label }]
+  })
+  const upcoming = fixed.concat(weekly.map((w, i) => {
     // Next matching weekday from tomorrow, or from the start date if that is later.
     const tomorrow = addDays(new Date(`${todayK}T00:00`), 1)
     const first = new Date(`${w.start}T00:00`)
@@ -160,12 +187,15 @@ export function Home({ setup, txs, weekly, freshId, mode, onMode, onAdd, onSetti
             <Label>Pengekartet</Label>
             <Seg options={MODES} value={mode} onChange={onMode} compact label="Vis" />
           </div>
-          <div ref={heatRef} className="no-scrollbar overflow-x-auto">
-            <div className="min-w-[820px]">
-              <Heat cells={heat.cells} className="wide" label="Varmekart siste 52 uker" />
-              <Months names={heat.names} className="text-xs" />
+          <div ref={heatRef} className="no-scrollbar overflow-x-auto py-1">
+            <div className="min-w-[1020px]">
+              <Heat cells={heat.cells} className="wide" label={`Varmekart siste ${PAST_WEEKS} uker og neste ${FUTURE_WEEKS} uker`} />
+              <div className="relative h-4 text-xs text-muted">
+                {heat.marks.map((m) => <span key={m.left} className="absolute top-0" style={{ left: m.left }}>{m.name}</span>)}
+              </div>
             </div>
           </div>
+          <span className="text-xs text-muted">Hvit kant er i dag. Dagene etter er en prognose. Sveip for å se fremover og bakover.</span>
         </Card>
 
         <Card id="sec-tx">
@@ -210,7 +240,7 @@ export function Home({ setup, txs, weekly, freshId, mode, onMode, onAdd, onSetti
                   <span className={over ? 'text-warn' : 'text-muted'}>{over ? `${kr(used - b)} over` : `${kr(b - used)} igjen`}</span>
                 </div>
                 <div className="h-1 overflow-hidden rounded-xs bg-cream/10">
-                  <i className="block h-full rounded-xs" style={{ background: over ? 'var(--color-warn)' : CATEGORIES[c].color, width: `${Math.min(100, b ? (used / b) * 100 : 0)}%` }} />
+                  <i className="block h-full rounded-xs" style={{ background: over ? 'var(--heat-neg)' : 'var(--heat)', width: `${Math.min(100, b ? (used / b) * 100 : 0)}%` }} />
                 </div>
               </div>
             ))}

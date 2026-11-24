@@ -1,14 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DEFAULT_SETUP, type Setup } from './data'
 import { addDays, iso } from './format'
-import { balanceNow, balancesAt, forecast, levels, type Tx } from './sim'
+import { balanceNow, balancesAt, forecast, levels, seedTxs, type Tx } from './sim'
 
 // Fixed "today" so date maths is the same on every run: Monday 2026-11-23.
 beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(new Date('2026-11-23T12:00:00')) })
 afterEach(() => vi.useRealTimers())
 
 // Only the weekly or one-off entry moves the balance: no bills, no pay, no daily spending.
-const quiet: Setup = { ...DEFAULT_SETUP, gross: 0, expenses: { 'Husleie / lån': 0, Strøm: 0, Mat: 0, Transport: 0, Abonnementer: 0, Annet: 0 } }
+const quiet: Setup = { ...DEFAULT_SETUP, gross: 0, bills: [] }
 const tx = (date: string, amount: number, mine = true): Tx => ({ id: Math.random(), date, name: 't', cat: 'Annet', amount, mine })
 
 describe('levels', () => {
@@ -44,6 +44,21 @@ describe('forecast', () => {
     const out = forecast(quiet, [], 1000, 1, [tx(day, -300)])
     expect(out.find((p) => p.k === iso(addDays(new Date(), 6)))!.v).toBe(1000)
     expect(out.find((p) => p.k === day)!.v).toBe(700)
+  })
+})
+
+describe('bills from onboarding', () => {
+  it('uses the names the user typed, not guessed shop names', () => {
+    const s: Setup = { ...quiet, bills: [{ id: 1, name: 'Lunsj på jobb', cat: 'Mat', amount: 50, repeat: 'weekly', day: 1, days: [1, 2, 3, 4, 5] }] }
+    const names = new Set(seedTxs(s).map((t) => t.name))
+    expect([...names]).toEqual(['Lunsj på jobb'])
+  })
+
+  it('pays on the chosen pay day in the forecast', () => {
+    const s: Setup = { ...quiet, gross: 40000, payDay: 25 }
+    const out = forecast(s, [], 0, 1)
+    const paid = out.filter((p) => p.income > 0).map((p) => p.k)
+    expect(paid).toEqual(['2026-11-25'])
   })
 })
 

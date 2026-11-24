@@ -90,7 +90,9 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px s
   .heat.still > i { animation: none; }
   .heat.wide { gap: 4px; }
   .heat.wide > i { border-radius: 4px; }
-  .heat > i.fut { opacity: 0.3; }
+  .heat > i.fut { opacity: 0.45; }
+  /* Today: white outline so you see where you are. */
+  .heat > i.now { outline: 2px solid var(--color-cream); outline-offset: 1px; }
   .heat > i[data-l='1'] { background: var(--h1); }
   .heat > i[data-l='2'] { background: var(--h2); }
   .heat > i[data-l='3'] { background: var(--h3); }
