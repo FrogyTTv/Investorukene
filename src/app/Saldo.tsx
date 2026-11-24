@@ -71,7 +71,7 @@ export function Saldo({ startIn = 'app' }: { startIn?: 'app' | 'onboarding' }) {
       <SettingsSheet open={settings} onClose={() => setSettings(false)} heat={heat} onHeat={setHeat} onRestart={restart} />
       {toast && (
         <div className="pointer-events-none fixed inset-x-0 bottom-[calc(24px+var(--safe-bottom))] z-20 flex justify-center" role="status">
-          <span key={toast.id} className="animate-[rise_.35s_var(--ease-soft)] rounded-full bg-ink px-4 py-2.5 text-[13px] font-semibold whitespace-nowrap">{toast.text}</span>
+          <span key={toast.id} className="animate-[rise_.35s_var(--ease-soft)] rounded-full glass px-4 py-2.5 text-[13px] font-semibold whitespace-nowrap">{toast.text}</span>
         </div>
       )}
     </>

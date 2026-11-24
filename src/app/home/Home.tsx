@@ -30,7 +30,7 @@ const Row = ({ cat, title, sub, amount, fresh }: { cat: string; title: string; s
 
 const Quick = ({ icon, onClick, children }: { icon: IconName; onClick: () => void; children: ReactNode }) => (
   <button type="button" onClick={onClick} className="group flex cursor-pointer flex-col items-center gap-2 p-0 text-[13px] font-medium">
-    <span className="grid size-[52px] place-items-center rounded-full bg-cream/14 transition-colors group-hover:bg-cream/22"><Icon name={icon} /></span>
+    <span className="grid size-[52px] place-items-center rounded-full glass"><Icon name={icon} /></span>
     {children}
   </button>
 )
@@ -134,9 +134,9 @@ export function Home({ setup, txs, weekly, freshId, mode, onMode, onAdd, onSetti
     <main ref={mainRef} className="h-full overflow-y-auto bg-page pr-(--safe-right) pb-[calc(56px+var(--safe-bottom))] pl-(--safe-left)">
       <section id="sec-home" className="flex flex-col items-center px-4 pb-8 text-center min-[901px]:px-[max(16px,calc(50%-424px))]">
         <header className="flex items-center justify-between self-stretch pt-[calc(12px+var(--safe-top))] pb-4">
-          <span className="grid size-10 place-items-center rounded-full bg-mint text-ink"><Icon name="user" className="size-[18px]" /></span>
+          <span className="grid size-10 place-items-center rounded-full glass text-mint"><Icon name="user" className="size-[18px]" /></span>
           <button type="button" aria-label="Innstillinger" onClick={onSettings}
-            className="grid size-10 cursor-pointer place-items-center rounded-full bg-cream/14">
+            className="grid size-10 cursor-pointer place-items-center rounded-full glass">
             <Icon name="sliders" />
           </button>
         </header>
@@ -145,7 +145,7 @@ export function Home({ setup, txs, weekly, freshId, mode, onMode, onAdd, onSetti
           {fmt(outM)}<small className="ml-[.15em] text-[.38em] tracking-normal">kr</small>
         </b>
         <button type="button" onClick={() => jump('sec-fore')}
-          className="mt-5 h-10 cursor-pointer rounded-full bg-cream/14 px-[22px] text-sm font-semibold">Prognose</button>
+          className="mt-5 h-10 cursor-pointer rounded-full glass px-[22px] text-sm font-semibold">Prognose</button>
         <div className="mt-8 grid w-full max-w-[380px] grid-cols-4 gap-1 min-[901px]:mt-10 min-[901px]:w-auto min-[901px]:grid-cols-[repeat(4,72px)] min-[901px]:gap-3" aria-label="Snarveier">
           <Quick icon="plus" onClick={() => onAdd('-1')}>Legg til</Quick>
           <Quick icon="income" onClick={() => onAdd('1')}>Inntekt</Quick>

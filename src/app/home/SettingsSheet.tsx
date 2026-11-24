@@ -15,7 +15,7 @@ export function SettingsSheet({ open, onClose, heat, onHeat, onRestart }: {
   return (
     <Sheet open={open} onClose={onClose} title="Innstillinger" titleId="setTitle">
       <span className="text-[13px] text-muted">Farge på pengekartet</span>
-      <div className="rounded-[20px] bg-cream/10 p-4 inset-ring inset-ring-cream/10">
+      <div className="rounded-[22px] glass-card p-4">
         <Heat cells={PREVIEW} className="wide w-full" />
       </div>
       <div className="grid grid-cols-4 gap-x-2 gap-y-3.5" role="radiogroup" aria-label="Farge på pengekartet">

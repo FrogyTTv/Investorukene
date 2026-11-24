@@ -30,7 +30,7 @@ const Field = ({ label, htmlFor, children }: { label: string; htmlFor: string; c
   <label htmlFor={htmlFor} className="flex flex-col gap-1.5 text-[13px] font-medium text-muted">{label}{children}</label>
 )
 const Box = ({ bad = false, children }: { bad?: boolean; children: ReactNode }) => (
-  <div className={`flex justify-between rounded-[10px] bg-cream/10 p-3.5 text-sm ${bad ? '[&>b]:text-warn' : ''}`}>{children}</div>
+  <div className={`flex justify-between rounded-[14px] glass p-3.5 text-sm ${bad ? '[&>b]:text-warn' : ''}`}>{children}</div>
 )
 
 type Props = {
@@ -98,7 +98,7 @@ export function Onboarding({ setup, onChange, mode, onMode, onDone }: Props) {
             <H2>Hva tjener du?</H2>
             <Lead>Månedslønn før skatt. Vi regner ut hva du sitter igjen med.</Lead>
             <Field label="Brutto månedslønn" htmlFor="gross"><MoneyInput id="gross" value={setup.gross} onChange={(gross) => set({ gross })} /></Field>
-            <TaxBox gross={setup.gross} net={net} pct={taxPercent(setup.gross)} className="rounded-[10px] bg-cream/10 p-3.5" />
+            <TaxBox gross={setup.gross} net={net} pct={taxPercent(setup.gross)} className="rounded-[14px] glass p-3.5" />
             <p className="text-xs text-muted">Forenklet estimat med 2025-satser: trygdeavgift, trinnskatt og 22 % skatt på alminnelig inntekt etter minstefradrag og personfradrag.</p>
             <Field label="Hvor mye har du på konto nå?" htmlFor="saldo"><MoneyInput id="saldo" value={setup.saldo} onChange={(saldo) => set({ saldo })} /></Field>
           </>)}
@@ -122,7 +122,7 @@ export function Onboarding({ setup, onChange, mode, onMode, onDone }: Props) {
             <Lead>Et mål gjør det lettere å holde budsjettet.</Lead>
             <Field label="Navn på målet" htmlFor="goalName">
               <input id="goalName" value={setup.goalName} onChange={(e) => set({ goalName: e.target.value })}
-                className="h-11 rounded-[10px] border border-cream/14 bg-cream/10 px-3.5 text-sm font-medium text-cream transition-[border-color,box-shadow] focus:border-cream focus:shadow-[0_0_0_4px_color-mix(in_srgb,var(--color-cream)_10%,transparent)]" />
+                className="h-11 rounded-[14px] glass px-3.5 text-sm font-medium text-cream focus:inset-ring-1 focus:inset-ring-cream focus:shadow-[0_0_0_4px_color-mix(in_srgb,var(--color-cream)_10%,transparent)]" />
             </Field>
             <Field label="Beløp" htmlFor="goalAmt"><MoneyInput id="goalAmt" value={setup.goalAmt} onChange={(goalAmt) => set({ goalAmt })} /></Field>
             <Box><span>{surplus > 0 ? 'Om du sparer alt til overs' : 'Ingenting til overs ennå'}</span><b className="font-medium">{isFinite(months) ? `${months} mnd` : '–'}</b></Box>
@@ -152,7 +152,7 @@ export function Onboarding({ setup, onChange, mode, onMode, onDone }: Props) {
 
       <div className="px-[22px] pt-4 pb-[calc(24px+var(--safe-bottom))] min-[960px]:px-[max(48px,calc(50%-260px))] min-[960px]:pb-14">
         <button type="button" disabled={step === 1 && !setup.gross} onClick={() => (step === LAST ? onDone() : go(step + 1))}
-          className="h-11 w-full cursor-pointer rounded-[10px] bg-cream px-6 text-sm font-medium tracking-[.01em] text-ink transition-[transform,opacity] duration-150 ease-soft not-disabled:hover:-translate-y-px not-disabled:active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-40">
+          className="h-[52px] w-full cursor-pointer rounded-full bg-cream px-6 text-base font-semibold shadow-[inset_0_1px_0_rgb(255_255_255_/.7),0_10px_24px_-10px_rgb(0_0_0_/.6)] tracking-[.01em] text-ink transition-[transform,opacity] duration-150 ease-soft not-disabled:hover:-translate-y-px not-disabled:active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-40">
           {BUTTONS[step]}
         </button>
       </div>
