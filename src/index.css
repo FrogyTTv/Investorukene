@@ -1,111 +1,118 @@
+@import 'tailwindcss';
+
+/* Team palette. Change these and the whole app follows. */
+@theme {
+  --color-ink: #001514;
+  --color-blue: #232ed1;
+  --color-mint: #c2e7da;
+  --color-cream: #f1ffe7;
+  --color-green: #96d248;
+  /* Derived from Primary Blue: color-mix(in oklab, #232ed1 50% / 22%, #000). Written out as values because
+     the CSS minifier computes these mixes wrong (keeps full chroma), which turns the page purple. */
+  --color-deep: oklab(0.216586 -0.00325879 -0.119871);
+  --color-navy: oklab(0.0952977 -0.00143387 -0.0527432);
+  --color-night: oklab(0.0476488 -0.000716935 -0.0263716); /* navy 50% into black, bottom of the page */
+  --color-muted: color-mix(in srgb, #f1ffe7 62%, transparent);
+  --color-warn: #ff9a80;
+
+  /* Headings and big numbers use Mona Sans bold, like the prototype artifact. */
+  --font-display: 'Mona Sans', system-ui, sans-serif;
+  --font-body: 'Mona Sans', system-ui, sans-serif;
+
+  --ease-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-rise: rise 0.55s var(--ease-soft) both;
+  --animate-rise-fast: rise 0.3s var(--ease-soft);
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+  }
+  @keyframes rise-back {
+    from { opacity: 0; transform: translateY(-14px); }
+  }
+  @keyframes pop {
+    from { opacity: 0; transform: scale(0.3); }
+  }
+}
+
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  /* Heatmap: --heat for positive days (changeable in Innstillinger), --heat-neg for negative days. */
+  --heat: #96d248;
+  --heat-neg: #f2545b;
+  --h0: color-mix(in srgb, var(--color-cream) 10%, transparent);
+  --h1: color-mix(in srgb, var(--heat) 35%, transparent);
+  --h2: color-mix(in srgb, var(--heat) 60%, transparent);
+  --h3: color-mix(in srgb, var(--heat) 85%, transparent);
+  --h4: var(--heat);
+  --n1: color-mix(in srgb, var(--heat-neg) 35%, transparent);
+  --n2: color-mix(in srgb, var(--heat-neg) 60%, transparent);
+  --n3: color-mix(in srgb, var(--heat-neg) 85%, transparent);
+  --n4: var(--heat-neg);
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+  /* Safe areas. The device emulator overrides these, because env() is 0 inside an iframe. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+  color-scheme: dark;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
+html, body, #root { height: 100%; }
 body {
   margin: 0;
+  background: var(--color-navy);
+  color: var(--color-cream);
+  font: 14px/1.5 var(--font-body);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2 { font-synthesis: none; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--color-cream); outline-offset: 2px; }
+
+/* Page backgrounds: blue gradients that fade gradually and never turn green. */
+@utility bg-onboard {
+  background: linear-gradient(in oklab 180deg, var(--color-blue) 0, var(--color-deep) 45%, var(--color-navy) 100%);
+}
+@utility bg-page {
+  background: linear-gradient(in oklab 180deg, var(--color-blue) 0, var(--color-deep) 520px, var(--color-navy) 1100px,
+    var(--color-night) 100%);
+  background-attachment: local;
+}
+@utility bg-sheet {
+  background: linear-gradient(in oklab 180deg, var(--color-deep) 0, var(--color-navy) 70%);
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+@layer components {
+  /* Heatmap grid: one column per week, one row per weekday. */
+  .heat { display: grid; grid-template-rows: repeat(7, 1fr); grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; }
+  .heat > i { aspect-ratio: 1; border-radius: 2px; background: var(--h0);
+    animation: pop 0.45s var(--ease-soft) both; animation-delay: calc(var(--d, 0) * 1ms); }
+  .heat.still > i { animation: none; }
+  .heat.wide { gap: 4px; }
+  .heat.wide > i { border-radius: 4px; }
+  .heat > i.fut { opacity: 0.3; }
+  .heat > i[data-l='1'] { background: var(--h1); }
+  .heat > i[data-l='2'] { background: var(--h2); }
+  .heat > i[data-l='3'] { background: var(--h3); }
+  .heat > i[data-l='4'] { background: var(--h4); }
+  .heat > i[data-l='-1'] { background: var(--n1); }
+  .heat > i[data-l='-2'] { background: var(--n2); }
+  .heat > i[data-l='-3'] { background: var(--n3); }
+  .heat > i[data-l='-4'] { background: var(--n4); }
+
+  /* Onboarding steps: children rise in one after another. */
+  .step > * { animation: var(--animate-rise); }
+  .step > :nth-child(2) { animation-delay: 0.06s; }
+  .step > :nth-child(3) { animation-delay: 0.12s; }
+  .step > :nth-child(4) { animation-delay: 0.18s; }
+  .step > :nth-child(5) { animation-delay: 0.24s; }
+  .step > :nth-child(n + 6) { animation-delay: 0.3s; }
+  .step.back-dir > * { animation-name: rise-back; }
+
+  .no-scrollbar { scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
 }
