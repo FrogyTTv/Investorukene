@@ -13,7 +13,7 @@ export type NewEntry =
 type Sign = '-1' | '1'
 type Repeat = 'once' | 'weekly'
 
-const glass = 'glass-card'
+const glass = 'bg-cream/10 inset-ring inset-ring-cream/10'
 const bare = 'w-full min-w-0 cursor-pointer appearance-none border-0 bg-transparent p-0 text-base font-semibold text-cream outline-none placeholder:text-cream/45 focus-visible:underline focus-visible:underline-offset-4'
 
 export function AddSheet({ open, sign: initialSign, onClose, onAdd }: {
@@ -89,7 +89,7 @@ export function AddSheet({ open, sign: initialSign, onClose, onAdd }: {
             <div className="grid grid-cols-7 gap-1.5" role="group" aria-label="Ukedager">
               {WEEKDAYS.map(([d, t]) => (
                 <button key={d} type="button" aria-pressed={days.includes(d)} onClick={() => toggleDay(d)}
-                  className="h-10 cursor-pointer rounded-full glass text-[13px] font-semibold text-muted aria-pressed:bg-cream aria-pressed:text-ink">
+                  className="h-10 cursor-pointer rounded-full bg-cream/10 text-[13px] font-semibold text-muted inset-ring inset-ring-cream/10 aria-pressed:bg-cream aria-pressed:text-ink aria-pressed:inset-ring-0">
                   {t}
                 </button>
               ))}

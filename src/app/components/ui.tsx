@@ -22,10 +22,10 @@ export function Seg<T extends string>({ options, value, onChange, className = ''
   options: [T, string][]; value: T; onChange: (v: T) => void; className?: string; compact?: boolean; label?: string
 }) {
   return (
-    <div className={`flex gap-1 rounded-full glass p-[3px] ${className}`} role="group" aria-label={label}>
+    <div className={`flex gap-1 rounded-[10px] bg-cream/10 p-[3px] ${className}`} role="group" aria-label={label}>
       {options.map(([v, t]) => (
         <button key={v} type="button" aria-pressed={v === value} onClick={() => onChange(v)}
-          className={`flex-1 cursor-pointer rounded-full text-[13px] font-medium whitespace-nowrap text-muted transition-colors duration-200 aria-pressed:bg-cream aria-pressed:text-ink ${compact ? 'px-[11px] py-[5px]' : 'p-1.5'}`}>
+          className={`flex-1 cursor-pointer rounded-[7px] text-[13px] font-medium whitespace-nowrap text-muted transition-colors duration-200 aria-pressed:bg-cream aria-pressed:text-ink ${compact ? 'px-[11px] py-[5px]' : 'p-1.5'}`}>
           {t}
         </button>
       ))}
@@ -36,7 +36,7 @@ export function Seg<T extends string>({ options, value, onChange, className = ''
 /** Money field that shows thousand spaces while you type. */
 export function MoneyInput({ id, value, onChange, className = '' }: { id: string; value: number; onChange: (v: number) => void; className?: string }) {
   return (
-    <span className={`flex h-11 items-center rounded-[14px] glass px-3.5 focus-within:inset-ring-1 focus-within:inset-ring-cream focus-within:shadow-[0_0_0_4px_color-mix(in_srgb,var(--color-cream)_10%,transparent)] ${className}`}>
+    <span className={`flex h-11 items-center rounded-[10px] border border-cream/14 bg-cream/10 px-3.5 transition-[border-color,box-shadow] focus-within:border-cream focus-within:shadow-[0_0_0_4px_color-mix(in_srgb,var(--color-cream)_10%,transparent)] ${className}`}>
       <input id={id} inputMode="numeric" value={value ? value.toLocaleString('nb-NO') : ''} onChange={(e) => onChange(parseNum(e.target.value))}
         className="h-full min-w-0 flex-1 bg-transparent p-0 text-sm font-medium outline-none placeholder:text-cream/45" style={{ outline: 'none' }} />
       <span className="text-sm text-muted">kr</span>
@@ -47,7 +47,7 @@ export function MoneyInput({ id, value, onChange, className = '' }: { id: string
 /** Glass card. */
 export function Card({ id, className = '', children }: { id?: string; className?: string; children: ReactNode }) {
   return (
-    <section id={id} className={`flex min-w-0 scroll-mt-6 flex-col gap-3 rounded-[24px] glass-card p-[18px] ${className}`}>
+    <section id={id} className={`flex min-w-0 scroll-mt-6 flex-col gap-3 rounded-[22px] bg-cream/10 p-[18px] inset-ring inset-ring-cream/10 ${className}`}>
       {children}
     </section>
   )
@@ -98,7 +98,7 @@ export function Stats({ items }: { items: [string, number][] }) {
   return (
     <div className="grid grid-cols-2 gap-2.5">
       {items.map(([t, v]) => (
-        <div key={t} className="rounded-[14px] glass p-3.5">
+        <div key={t} className="rounded-[10px] border border-cream/14 p-3.5">
           <span className="text-xs text-muted">{t}</span>
           <b className="block text-base font-medium"><CountUp value={v} /></b>
         </div>
