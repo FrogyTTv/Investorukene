@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import 'tailwindcss' source('./');
 
 /* Team palette. Change these and the whole app follows. */
 @theme {

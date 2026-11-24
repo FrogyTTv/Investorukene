@@ -4,5 +4,19 @@
   "rules": {
     "react/rules-of-hooks": "error",
     "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
+  },
+  "overrides": [
+    {
+      "files": ["src/emulator/**"],
+      "rules": {
+        "no-restricted-imports": ["error", { "patterns": [{ "group": ["**/app/**", "../app", "../app/*"], "message": "The emulator must not import app code. It only loads app.html." }] }]
+      }
+    },
+    {
+      "files": ["src/app/**"],
+      "rules": {
+        "no-restricted-imports": ["error", { "patterns": [{ "group": ["**/emulator/**", "../emulator", "../emulator/*"], "message": "The app must not know about the emulator." }] }]
+      }
+    }
+  ]
 }

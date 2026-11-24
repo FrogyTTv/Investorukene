@@ -7,4 +7,10 @@ export default defineConfig({
   // Relative base so the build also works on GitHub Pages (served from /<repo>/).
   base: './',
   plugins: [react(), tailwindcss()],
+  build: {
+    rollupOptions: {
+      // Two separate pages: the device emulator (index.html) and the Saldo app itself (app.html).
+      input: { emulator: 'index.html', app: 'app.html' },
+    },
+  },
 })

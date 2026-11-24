@@ -1,12 +1,12 @@
 // The Saldo app: onboarding, home screen and sheets. Example data only, nothing leaves the browser.
 import { useEffect, useState } from 'react'
-import { DEFAULT_SETUP, HEATS, type Setup } from '../lib/data'
-import { addDays, iso, signed } from '../lib/format'
-import { seedTxs, txId, type Mode, type Tx, type Weekly } from '../lib/sim'
-import { Onboarding } from '../onboarding/Onboarding'
-import { AddSheet, type NewEntry } from './AddSheet'
-import { Home } from './Home'
-import { SettingsSheet } from './SettingsSheet'
+import { DEFAULT_SETUP, HEATS, type Setup } from './lib/data'
+import { addDays, iso, signed } from './lib/format'
+import { seedTxs, txId, type Mode, type Tx, type Weekly } from './lib/sim'
+import { Onboarding } from './onboarding/Onboarding'
+import { AddSheet, type NewEntry } from './home/AddSheet'
+import { Home } from './home/Home'
+import { SettingsSheet } from './home/SettingsSheet'
 
 const HEAT_KEY = 'saldo:heat'
 const readHeat = () => { try { return localStorage.getItem(HEAT_KEY) || HEATS[0][1] } catch { return HEATS[0][1] } }
