@@ -1,5 +1,6 @@
 # Builds the Saldo app and publishes it to GitHub Pages on every push to main.
-# One-time setup: Settings > Pages > Build and deployment > Source: "GitHub Actions".
+# configure-pages tries to turn Pages on (Source: GitHub Actions) if it is off. If the repo token is not
+# allowed to do that, the repo owner sets it once: Settings > Pages > Build and deployment > Source: "GitHub Actions".
 name: Deploy to GitHub Pages
 
 on:
@@ -25,7 +26,11 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - run: npm ci
+      - run: npm test
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:
