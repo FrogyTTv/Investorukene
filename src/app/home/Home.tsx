@@ -88,7 +88,8 @@ export function Home({ setup, txs, weekly, freshId, mode, onMode, onAdd, onSetti
     const marks: { name: string; left: string }[] = []
     for (let w = 0; w < weeks; w++) {
       const d = addDays(start, w * 7)
-      if (d.getDate() <= 7) marks.push({ name: monthShort(d), left: `${(w / weeks) * 100}%` })
+      // Skip the last two columns, so a label never sticks out past the map.
+      if (d.getDate() <= 7 && w < weeks - 2) marks.push({ name: monthShort(d), left: `calc(${w} * (100% + 4px) / ${weeks})` })
     }
     return {
       cells: cells.map((c, i) => ({ l: lv[i], fut: c.future, now: c.k === todayK, title: `${dayLabel(c.k)}${c.future ? ' (prognose)' : ''}: ${signedKr(c.v)}` })),
@@ -100,7 +101,8 @@ export function Home({ setup, txs, weekly, freshId, mode, onMode, onAdd, onSetti
   useLayoutEffect(() => {
     const el = heatRef.current
     if (!el) return
-    const todayX = ((PAST_WEEKS - 0.5) / (PAST_WEEKS + FUTURE_WEEKS)) * el.scrollWidth
+    const grid = (el.firstElementChild as HTMLElement | null)?.clientWidth ?? el.scrollWidth
+    const todayX = ((PAST_WEEKS - 0.5) / (PAST_WEEKS + FUTURE_WEEKS)) * grid
     el.scrollLeft = todayX - el.clientWidth * 0.8
   }, [heat])
 
@@ -121,9 +123,9 @@ export function Home({ setup, txs, weekly, freshId, mode, onMode, onAdd, onSetti
 
   // Upcoming: monthly bills, pay, and the user's own weekly and future entries. Weekly bills (like lunch) are left out, they happen all the time.
   const midnight = new Date(`${todayK}T00:00`).getTime()
-  // First day from today on which `due` is true, within about two months.
+  // First day after today on which `due` is true, within about two months. Today's bills are already in the history.
   const nextDay = (due: (d: Date) => boolean) => {
-    for (let i = 0; i < 62; i++) { const d = addDays(new Date(`${todayK}T12:00`), i); if (due(d)) return d }
+    for (let i = 1; i < 62; i++) { const d = addDays(new Date(`${todayK}T12:00`), i); if (due(d)) return d }
     return null
   }
   const when = (d: Date) => {
@@ -143,11 +145,11 @@ export function Home({ setup, txs, weekly, freshId, mode, onMode, onAdd, onSetti
     // Next matching weekday from tomorrow, or from the start date if that is later.
     const tomorrow = addDays(new Date(`${todayK}T00:00`), 1)
     const first = new Date(`${w.start}T00:00`)
-    const when = first > tomorrow ? first : tomorrow
-    while (!w.days.includes(when.getDay())) when.setDate(when.getDate() + 1)
-    const days = Math.round((when.getTime() - midnight) / 864e5)
+    const next = first > tomorrow ? first : tomorrow
+    while (!w.days.includes(next.getDay())) next.setDate(next.getDate() + 1)
+    const days = Math.round((next.getTime() - midnight) / 864e5)
     const dn = WEEKDAYS.filter(([d]) => w.days.includes(d)).map(([, n]) => n).join(', ')
-    return { key: `w${i}`, days, cat: w.cat, name: w.name, amount: w.amount, sub: `Hver uke · ${dn} · ${dayLabel(iso(when))}` }
+    return { key: `w${i}`, days, cat: w.cat, name: w.name, amount: w.amount, sub: `Hver uke · ${dn} · ${dayLabel(iso(next))}` }
   })).concat(txs.filter((t) => t.date > todayK).map((t) => {
     // One-off entries dated in the future
     const days = Math.round((new Date(`${t.date}T00:00`).getTime() - midnight) / 864e5)
@@ -237,7 +239,7 @@ export function Home({ setup, txs, weekly, freshId, mode, onMode, onAdd, onSetti
               <div key={c} className="flex flex-col gap-1.5 text-sm font-medium">
                 <div className="flex justify-between gap-2">
                   <span>{c}</span>
-                  <span className={over ? 'text-warn' : 'text-muted'}>{over ? `${kr(used - b)} over` : `${kr(b - used)} igjen`}</span>
+                  <span className={over ? 'text-(--heat-neg)' : 'text-muted'}>{over ? `${kr(used - b)} over` : `${kr(b - used)} igjen`}</span>
                 </div>
                 <div className="h-1 overflow-hidden rounded-xs bg-cream/10">
                   <i className="block h-full rounded-xs" style={{ background: over ? 'var(--heat-neg)' : 'var(--heat)', width: `${Math.min(100, b ? (used / b) * 100 : 0)}%` }} />

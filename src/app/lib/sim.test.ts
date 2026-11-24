@@ -54,6 +54,22 @@ describe('bills from onboarding', () => {
     expect([...names]).toEqual(['Lunsj på jobb'])
   })
 
+  it('keeps money in and out on the same day apart', () => {
+    const start = iso(new Date())
+    const weekly = [
+      { name: 'Inn', cat: 'Annen inntekt', amount: 500, days: [5], start },
+      { name: 'Ut', cat: 'Annet', amount: -500, days: [5], start },
+    ]
+    const friday = forecast(quiet, weekly, 0, 1).find((p) => p.k === '2026-11-27')!
+    expect(friday.income).toBe(500)
+    expect(friday.spend).toBe(500)
+  })
+
+  it('books bills due today in the history', () => {
+    const s: Setup = { ...quiet, bills: [{ id: 1, name: 'Husleie', cat: 'Husleie / lån', amount: 9500, repeat: 'monthly', day: 23, days: [] }] }
+    expect(seedTxs(s).some((t) => t.date === '2026-11-23' && t.amount === -9500)).toBe(true)
+  })
+
   it('pays on the chosen pay day in the forecast', () => {
     const s: Setup = { ...quiet, gross: 40000, payDay: 25 }
     const out = forecast(s, [], 0, 1)

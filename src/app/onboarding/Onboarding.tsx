@@ -146,7 +146,7 @@ export function Onboarding({ setup, onChange, mode, onMode, onDone }: Props) {
       </div>
 
       <div className="px-[22px] pt-4 pb-[calc(24px+var(--safe-bottom))] min-[960px]:px-[max(48px,calc(50%-260px))] min-[960px]:pb-14">
-        <button type="button" disabled={step === 1 && !setup.gross} onClick={() => (step === LAST ? onDone() : go(step + 1))}
+        <button type="button" disabled={(step === 1 && !setup.gross) || (step === 2 && setup.bills.some((b) => b.repeat === 'weekly' && !b.days.length))} onClick={() => (step === LAST ? onDone() : go(step + 1))}
           className="h-11 w-full cursor-pointer rounded-[10px] bg-cream px-6 text-sm font-medium tracking-[.01em] text-ink transition-[transform,opacity] duration-150 ease-soft not-disabled:hover:-translate-y-px not-disabled:active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-40">
           {BUTTONS[step]}
         </button>

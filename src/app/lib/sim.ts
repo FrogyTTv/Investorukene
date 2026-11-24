@@ -55,14 +55,14 @@ export function simulate(days: number, s: Setup) {
   return out
 }
 
-/** One year of example history from the user's own bills, with their own names, and pay on their pay day. */
+/** One year of example history up to and including today, from the user's own bills and names, and pay on their pay day. */
 export function seedTxs(s: Setup): Tx[] {
   const r = rng(5)
   const net = netMonthly(s.gross)
   const out: Tx[] = []
   const add = (date: Date, name: string, cat: string, amount: number) =>
     out.push({ id: txId(), date: iso(date), name, cat, amount: Math.round(amount) })
-  for (let d = 364; d >= 1; d--) {
+  for (let d = 364; d >= 0; d--) {
     const date = addDays(new Date(), -d)
     for (const b of s.bills) if (billOn(b, date) && b.amount) add(date, b.name.trim() || b.cat, b.cat, -b.amount * vary(b.repeat === 'weekly', r))
     if (isDayOfMonth(s.payDay, date) && net) add(date, 'Lønn', 'Lønn', net)
@@ -92,18 +92,15 @@ export function balancesAt(txs: Tx[], now: number, todayK: string, days: string[
   return out
 }
 
-/** Sum of weekly expenses/income that fall on this date. */
-export const weeklyOn = (weekly: Weekly[], d: Date) =>
-  weekly.reduce((s, w) => (w.days.includes(d.getDay()) && iso(d) >= w.start ? s + w.amount : s), 0)
-
 /**
  * Forecast from tomorrow, `months` months ahead: the user's bills, pay and weekly entries, plus one-off
  * entries dated after today. Each day has its spending, income and end-of-day balance `v`.
  */
 export function forecast(s: Setup, weekly: Weekly[], now: number, months: number, txs: Tx[] = []) {
-  const planned: Record<string, number> = {}
+  // One-off entries after today, by day. Kept as a list so money in and out on the same day do not cancel out.
+  const planned: Record<string, number[]> = {}
   const todayK = iso(new Date())
-  for (const t of txs) if (t.date > todayK) planned[t.date] = (planned[t.date] ?? 0) + t.amount
+  for (const t of txs) if (t.date > todayK) (planned[t.date] ??= []).push(t.amount)
   const net = netMonthly(s.gross)
   const out: { k: string; v: number; spend: number; income: number }[] = []
   let v = now
@@ -112,7 +109,8 @@ export function forecast(s: Setup, weekly: Weekly[], now: number, months: number
     const k = iso(x)
     let spend = 0, income = isDayOfMonth(s.payDay, x) ? net : 0
     for (const b of s.bills) if (billOn(b, x)) spend += b.amount
-    for (const a of [weeklyOn(weekly, x), planned[k] ?? 0]) {
+    const entries = [...weekly.filter((w) => w.days.includes(x.getDay()) && k >= w.start).map((w) => w.amount), ...(planned[k] ?? [])]
+    for (const a of entries) {
       if (a < 0) spend -= a
       else income += a
     }
