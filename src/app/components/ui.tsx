@@ -4,14 +4,14 @@ import { CATEGORIES } from '../lib/data'
 import { kr, parseNum } from '../lib/format'
 import { Icon } from './Icon'
 
-export type HeatCell = { l: number; title?: string; fut?: boolean; d?: number }
+export type HeatCell = { l: number; title?: string; fut?: boolean; now?: boolean; d?: number }
 
 /** Heatmap grid. `animate` pops the squares in as a wave. */
 export function Heat({ cells, animate = false, className = '', label }: { cells: HeatCell[]; animate?: boolean; className?: string; label?: string }) {
   return (
     <div className={`heat ${animate ? '' : 'still'} ${className}`} aria-label={label} aria-hidden={label ? undefined : true} role={label ? 'img' : undefined}>
       {cells.map((c, i) => (
-        <i key={i} data-l={c.l} className={c.fut ? 'fut' : undefined} title={c.title} style={c.d != null ? ({ '--d': c.d } as CSSProperties) : undefined} />
+        <i key={i} data-l={c.l} className={[c.fut && 'fut', c.now && 'now'].filter(Boolean).join(' ') || undefined} title={c.title} style={c.d != null ? ({ '--d': c.d } as CSSProperties) : undefined} />
       ))}
     </div>
   )
@@ -63,12 +63,12 @@ export const BigNum = ({ value, className = '' }: { value: ReactNode; className?
   </b>
 )
 
-/** Round category icon in the category colour. */
+/** Round category icon in the heatmap colour, so it follows the colour chosen in Innstillinger. */
 export function CatChip({ cat, size = 'size-10' }: { cat: string; size?: string }) {
   const c = CATEGORIES[cat] ?? CATEGORIES.Annet
   return (
     <span className={`grid flex-none place-items-center rounded-full ${size}`}
-      style={{ color: `color-mix(in srgb, ${c.color} 75%, #fff)`, background: `color-mix(in srgb, ${c.color} 22%, transparent)` }}>
+      style={{ color: 'color-mix(in srgb, var(--heat) 75%, #fff)', background: 'color-mix(in srgb, var(--heat) 22%, transparent)' }}>
       <Icon name={c.icon} />
     </span>
   )
