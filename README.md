@@ -33,7 +33,9 @@ To remove the emulator, delete `src/emulator/` and `index.html`, rename `app.htm
 | `/` on desktop (wider than 900 px) | The emulator with the app inside |
 | `/` on a phone or narrow window | Sends you to `app.html` |
 | `/app.html` | The bare app at any width |
-| `/app.html?start=onboarding` | The app, starting in onboarding |
+| `?start=onboarding` (on `/` or `/app.html`) | The app, starting in onboarding |
+
+The choice between emulator and bare app is made once, when `/` loads. Resizing the window after that does not switch it.
 
 In the emulator toolbar you can change device (iPhone 15 Pro is the default, same frame as the prototype), turn it to landscape, switch between "fit to window" and 100 %, reload, or open the app in a new tab. Add devices in `src/emulator/devices.ts`.
 

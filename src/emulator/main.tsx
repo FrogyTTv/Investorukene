@@ -7,7 +7,7 @@ import { APP_URL, Emulator } from './Emulator'
 
 // Phones and narrow windows get the app itself, full screen.
 if (!matchMedia('(min-width: 901px)').matches) {
-  location.replace(APP_URL + location.search)
+  location.replace(APP_URL + location.search + location.hash)
 } else {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
