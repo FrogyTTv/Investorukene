@@ -33,4 +33,4 @@ See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rule
 
 ## Pull request reviews
 
-Every new pull request gets an automatic Claude review. Claude posts its findings as comments on the PR.
+Claude reviews every pull request that is not a draft, and reviews again when new commits are pushed. It posts its findings as comments on the PR. It never approves, merges or changes code.
