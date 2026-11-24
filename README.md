@@ -30,3 +30,7 @@ If you are developing a production application, we recommend enabling type-aware
 ```
 
 See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+
+## Pull request reviews
+
+Every new pull request gets an automatic Claude review. Claude posts its findings as comments on the PR.
