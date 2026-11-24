@@ -97,7 +97,7 @@ export function Home({ setup, txs, weekly, freshId, mode, onMode, onAdd, onSetti
   // Latest transactions
   const yK = iso(addDays(today, -1))
   const dl = (k: string) => (k === todayK ? 'I dag' : k === yK ? 'I går' : dayLabel(k))
-  const list = [...txs].sort((a, b) => b.date.localeCompare(a.date) || Number(!!b.mine) - Number(!!a.mine)).slice(0, txAll ? 20 : 3)
+  const list = booked(txs, todayK).sort((a, b) => b.date.localeCompare(a.date) || Number(!!b.mine) - Number(!!a.mine)).slice(0, txAll ? 20 : 3)
 
   // Upcoming bills, pay and weekly entries
   const dom = today.getDate()
