@@ -35,7 +35,8 @@ export function Saldo({ startIn = 'app' }: { startIn?: 'app' | 'onboarding' }) {
     return () => clearTimeout(t)
   }, [toast])
 
-  const openApp = () => { setTxs(seedTxs(setup)); setView('app') }
+  // A finished onboarding is a fresh start: new example history, and the user's own entries are cleared.
+  const openApp = () => { setTxs(seedTxs(setup)); setWeekly([]); setFreshId(null); setView('app') }
   const restart = () => { setSettings(false); setView('onboarding') }
 
   const onAdd = (e: NewEntry) => {

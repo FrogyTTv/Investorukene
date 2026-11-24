@@ -1,0 +1,66 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { DEFAULT_SETUP, type Setup } from './data'
+import { addDays, iso } from './format'
+import { balanceNow, balancesAt, forecast, levels, type Tx } from './sim'
+
+// Fixed "today" so date maths is the same on every run: Monday 2026-11-23.
+beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(new Date('2026-11-23T12:00:00')) })
+afterEach(() => vi.useRealTimers())
+
+// Only the weekly or one-off entry moves the balance: no bills, no pay, no daily spending.
+const quiet: Setup = { ...DEFAULT_SETUP, gross: 0, expenses: { 'Husleie / lån': 0, Strøm: 0, Mat: 0, Transport: 0, Abonnementer: 0, Annet: 0 } }
+const tx = (date: string, amount: number, mine = true): Tx => ({ id: Math.random(), date, name: 't', cat: 'Annet', amount, mine })
+
+describe('levels', () => {
+  it('gives green levels 1..4 when all values are positive', () => {
+    const lv = levels([1, 2, 3, 4, 5, 6, 7, 8])
+    expect(lv.every((l) => l >= 1 && l <= 4)).toBe(true)
+    expect(lv[0]).toBe(1)
+    expect(lv[7]).toBe(4)
+  })
+
+  it('gives red levels -1..-4 when all values are negative', () => {
+    const lv = levels([-1, -2, -3, -4, -5, -6, -7, -8])
+    expect(lv.every((l) => l <= -1 && l >= -4)).toBe(true)
+    expect(lv[0]).toBe(-1)
+    expect(lv[7]).toBe(-4)
+  })
+
+  it('gives 0 for days with nothing', () => {
+    expect(levels([0, 5, -5])).toEqual([0, 1, -1])
+  })
+})
+
+describe('forecast', () => {
+  it('adds a weekly entry only from its start date', () => {
+    const start = iso(addDays(new Date(), 14))
+    const out = forecast(quiet, [{ name: 'Lunsj', cat: 'Mat', amount: -50, days: [0, 1, 2, 3, 4, 5, 6], start }], 1000, 1)
+    expect(out.find((p) => p.k === iso(addDays(new Date(), 13)))!.v).toBe(1000)
+    expect(out.find((p) => p.k === start)!.v).toBe(950)
+  })
+
+  it('adds a future one-off entry on its own day', () => {
+    const day = iso(addDays(new Date(), 7))
+    const out = forecast(quiet, [], 1000, 1, [tx(day, -300)])
+    expect(out.find((p) => p.k === iso(addDays(new Date(), 6)))!.v).toBe(1000)
+    expect(out.find((p) => p.k === day)!.v).toBe(700)
+  })
+})
+
+describe('balance', () => {
+  it('does not count a future-dated entry today', () => {
+    const today = iso(new Date())
+    const txs = [tx(iso(addDays(new Date(), -1)), -100), tx(iso(addDays(new Date(), 7)), -500)]
+    expect(balanceNow(quiet, txs, today)).toBe(DEFAULT_SETUP.saldo - 100)
+  })
+
+  it('gives the end-of-day balance for past days', () => {
+    const today = iso(new Date())
+    const y = iso(addDays(new Date(), -1)), y2 = iso(addDays(new Date(), -2))
+    const txs = [tx(y, -100), tx(today, 50), tx(iso(addDays(new Date(), 3)), -999)]
+    const bal = balancesAt(txs, 1000, today, [today, y, y2])
+    expect(bal.get(today)).toBe(1000)
+    expect(bal.get(y)).toBe(950)
+    expect(bal.get(y2)).toBe(1050)
+  })
+})

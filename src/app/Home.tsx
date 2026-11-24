@@ -5,7 +5,7 @@ import { Icon, type IconName } from '../components/Icon'
 import { BigNum, Card, CatChip, Heat, Label, Months, Seg, TaxBox } from '../components/ui'
 import { CATEGORIES, EXPENSES, WEEKDAYS, type Setup } from '../lib/data'
 import { addDays, dayLabel, fmt, iso, kr, monthName, monthShort, signed, signedKr } from '../lib/format'
-import { dayVal, levels, MODES, type Mode, type Tx, type Weekly } from '../lib/sim'
+import { balanceNow, balancesAt, booked, dayVal, levels, MODES, type Mode, type Tx, type Weekly } from '../lib/sim'
 import { netMonthly, taxPercent } from '../lib/tax'
 import { ForecastChart } from './ForecastChart'
 
@@ -43,7 +43,7 @@ export function Home({ setup, txs, weekly, freshId, mode, onMode, onAdd, onSetti
   const today = new Date()
   const todayK = iso(today)
   const net = netMonthly(setup.gross)
-  const now = setup.saldo + txs.filter((t) => t.mine).reduce((s, t) => s + t.amount, 0)
+  const now = balanceNow(setup, txs, todayK)
 
   const jump = (id: string) => {
     const el = document.getElementById(id)
@@ -52,7 +52,7 @@ export function Home({ setup, txs, weekly, freshId, mode, onMode, onAdd, onSetti
 
   // This month
   const mk = todayK.slice(0, 7)
-  const month = txs.filter((t) => t.date.startsWith(mk))
+  const month = booked(txs, todayK).filter((t) => t.date.startsWith(mk))
   const inM = month.reduce((a, t) => (t.amount > 0 ? a + t.amount : a), 0)
   const outM = month.reduce((a, t) => (t.amount < 0 ? a - t.amount : a), 0)
 
@@ -64,18 +64,15 @@ export function Home({ setup, txs, weekly, freshId, mode, onMode, onAdd, onSetti
       if (t.amount < 0) x.spend -= t.amount
       else x.income += t.amount
     }
-    // Balance at the end of each day = now minus everything after that day.
-    const sorted = [...txs].sort((a, b) => b.date.localeCompare(a.date))
     const end = addDays(new Date(), 6 - new Date().getDay())
     const start = addDays(end, -52 * 7 + 1)
-    const cells: { k: string; future: boolean; v: number }[] = []
-    for (let i = 0; i < 52 * 7; i++) {
-      const k = iso(addDays(start, i))
+    const keys = Array.from({ length: 52 * 7 }, (_, i) => iso(addDays(start, i)))
+    const bal = balancesAt(txs, now, todayK, keys.filter((k) => k <= todayK))
+    const cells = keys.map((k) => {
       const x = byDay[k] ?? { spend: 0, income: 0 }
       const future = k > todayK
-      const after = sorted.reduce((s, t) => (t.date > k ? s + t.amount : s), 0)
-      cells.push({ k, future, v: future ? 0 : dayVal(mode, x.spend, x.income, now - after) })
-    }
+      return { k, future, v: future ? 0 : dayVal(mode, x.spend, x.income, bal.get(k)!) }
+    })
     const lv = levels(cells.map((c) => c.v))
     const names: string[] = []
     for (let w = 0; w < 52; w += 4) { const n = monthShort(addDays(start, w * 7)); if (!names.includes(n)) names.push(n) }
@@ -116,11 +113,18 @@ export function Home({ setup, txs, weekly, freshId, mode, onMode, onAdd, onSetti
     const days = Math.round((when.getTime() - midnight) / 864e5)
     return { key: name, days, cat, name, amount, sub: `${days === 0 ? 'I dag' : days === 1 ? 'I morgen' : `Om ${days} dager`} · ${dayLabel(iso(when))}` }
   }).concat(weekly.map((w, i) => {
-    let days = 1
-    const when = addDays(new Date(), 1)
-    while (!w.days.includes(when.getDay())) { when.setDate(when.getDate() + 1); days++ }
+    // Next matching weekday from tomorrow, or from the start date if that is later.
+    const tomorrow = addDays(new Date(`${todayK}T00:00`), 1)
+    const first = new Date(`${w.start}T00:00`)
+    const when = first > tomorrow ? first : tomorrow
+    while (!w.days.includes(when.getDay())) when.setDate(when.getDate() + 1)
+    const days = Math.round((when.getTime() - midnight) / 864e5)
     const dn = WEEKDAYS.filter(([d]) => w.days.includes(d)).map(([, n]) => n).join(', ')
-    return { key: `w${i}`, days, cat: w.cat, name: w.name, amount: w.amount, sub: `Hver uke · ${dn}` }
+    return { key: `w${i}`, days, cat: w.cat, name: w.name, amount: w.amount, sub: `Hver uke · ${dn} · ${dayLabel(iso(when))}` }
+  })).concat(txs.filter((t) => t.date > todayK).map((t) => {
+    // One-off entries dated in the future
+    const days = Math.round((new Date(`${t.date}T00:00`).getTime() - midnight) / 864e5)
+    return { key: `t${t.id}`, days, cat: t.cat, name: t.name, amount: t.amount, sub: `${days === 1 ? 'I morgen' : `Om ${days} dager`} · ${dayLabel(t.date)}` }
   })).sort((a, b) => a.days - b.days).slice(0, 3)
 
   const goalPart = setup.goalAmt ? Math.min(1, Math.max(0, now / setup.goalAmt)) : 0

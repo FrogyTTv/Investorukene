@@ -1,7 +1,7 @@
 // Balance for the last 90 days (solid) and a forecast (dashed, heatmap colour). Hover or drag to read a day.
 import { useMemo, useRef, useState, type CSSProperties } from 'react'
 import { addDays, dayLabel, iso, kr, monthShort } from '../lib/format'
-import { forecast, type Tx, type Weekly } from '../lib/sim'
+import { balancesAt, forecast, type Tx, type Weekly } from '../lib/sim'
 import type { Setup } from '../lib/data'
 
 const W = 800, H = 220
@@ -11,10 +11,10 @@ export function ForecastChart({ setup, txs, weekly, now, months = 12 }: { setup:
   const [hover, setHover] = useState<number | null>(null)
 
   const c = useMemo(() => {
-    const sumAfter = (k: string) => txs.reduce((s, t) => (t.date > k ? s + t.amount : s), 0)
-    const past: { k: string; v: number }[] = []
-    for (let d = 90; d >= 0; d--) { const k = iso(addDays(new Date(), -d)); past.push({ k, v: now - sumAfter(k) }) }
-    const series = [...past, ...forecast(setup, weekly, now, months)]
+    const keys = Array.from({ length: 91 }, (_, j) => iso(addDays(new Date(), j - 90)))
+    const bal = balancesAt(txs, now, keys[90], keys)
+    const past = keys.map((k) => ({ k, v: bal.get(k)! }))
+    const series = [...past, ...forecast(setup, weekly, now, months, txs)]
     const n = series.length - 1, split = past.length - 1
     let lo = Math.min(...series.map((p) => p.v)), hi = Math.max(...series.map((p) => p.v))
     const pad = (hi - lo) * 0.12 || 1000

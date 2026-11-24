@@ -82,12 +82,37 @@ export function seedTxs(s: Setup): Tx[] {
   return out
 }
 
+/** Transactions dated today or earlier. A one-off entry can be dated in the future; it only counts from that day. */
+export const booked = (txs: Tx[], todayK: string) => txs.filter((t) => t.date <= todayK)
+
+/** Balance today: start balance plus the user's own entries up to today (the example history is already in it). */
+export const balanceNow = (s: Setup, txs: Tx[], todayK: string) =>
+  s.saldo + txs.reduce((sum, t) => (t.mine && t.date <= todayK ? sum + t.amount : sum), 0)
+
+/**
+ * Balance at the end of each day in `days` (all today or earlier): now minus everything booked after that day.
+ * One pass over the transactions, newest first.
+ */
+export function balancesAt(txs: Tx[], now: number, todayK: string, days: string[]) {
+  const sorted = booked(txs, todayK).sort((a, b) => b.date.localeCompare(a.date))
+  const out = new Map<string, number>()
+  let i = 0, after = 0
+  for (const k of [...days].sort().reverse()) {
+    while (i < sorted.length && sorted[i].date > k) after += sorted[i++].amount
+    out.set(k, now - after)
+  }
+  return out
+}
+
 /** Sum of weekly expenses/income that fall on this date. */
 export const weeklyOn = (weekly: Weekly[], d: Date) =>
   weekly.reduce((s, w) => (w.days.includes(d.getDay()) && iso(d) >= w.start ? s + w.amount : s), 0)
 
-/** Balance forecast from tomorrow, `months` months ahead, same rhythm as the history. */
-export function forecast(s: Setup, weekly: Weekly[], now: number, months: number) {
+/** Balance forecast from tomorrow, `months` months ahead, same rhythm as the history. `txs` adds one-off entries dated after today. */
+export function forecast(s: Setup, weekly: Weekly[], now: number, months: number, txs: Tx[] = []) {
+  const planned: Record<string, number> = {}
+  const todayK = iso(new Date())
+  for (const t of txs) if (t.date > todayK) planned[t.date] = (planned[t.date] ?? 0) + t.amount
   const e = s.expenses
   const daily = dailyVariable(s)
   const net = netMonthly(s.gross)
@@ -95,14 +120,15 @@ export function forecast(s: Setup, weekly: Weekly[], now: number, months: number
   let b = now
   for (let d = 1; d <= months * 30; d++) {
     const x = addDays(new Date(), d)
+    const k = iso(x)
     const dom = x.getDate()
     b -= daily
-    b += weeklyOn(weekly, x)
+    b += weeklyOn(weekly, x) + (planned[k] ?? 0)
     if (dom === 1) b -= e['Husleie / lån']
     if (dom === 5) b -= e.Abonnementer
     if (dom === 15) b -= e.Strøm
     if (dom === 20) b += net
-    out.push({ k: iso(x), v: b })
+    out.push({ k, v: b })
   }
   return out
 }

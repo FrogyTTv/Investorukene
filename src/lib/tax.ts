@@ -1,5 +1,6 @@
 // Simplified Norwegian tax, 2025 rates. Estimate only: no wealth tax, and no deductions
-// except minstefradrag and personfradrag. The UI labels it as an estimate.
+// except minstefradrag and personfradrag. Trygdeavgift is 7.7 % from the first krone (no lower limit / frikort),
+// so very low incomes get a bit too much tax. The UI labels it as an estimate.
 const TRINN: [number, number][] = [[217400, 0.017], [306050, 0.04], [697150, 0.137], [942400, 0.167], [1410750, 0.177], [Infinity, 0]]
 
 export function yearlyTax(y: number) {
