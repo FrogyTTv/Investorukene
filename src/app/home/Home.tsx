@@ -160,7 +160,7 @@ export function Home({ setup, txs, weekly, freshId, mode, onMode, onAdd, onSetti
   const C = 2 * Math.PI * 27
 
   return (
-    <main ref={mainRef} className="h-full overflow-y-auto bg-page pr-(--safe-right) pb-[calc(56px+var(--safe-bottom))] pl-(--safe-left)">
+    <main ref={mainRef} className="no-scrollbar h-full overflow-y-auto bg-page pr-(--safe-right) pb-[calc(56px+var(--safe-bottom))] pl-(--safe-left)">
       <section id="sec-home" className="flex flex-col items-center px-4 pb-8 text-center min-[901px]:px-[max(16px,calc(50%-424px))]">
         <header className="flex items-center justify-between self-stretch pt-[calc(12px+var(--safe-top))] pb-4">
           <span className="grid size-10 place-items-center rounded-full bg-mint text-ink"><Icon name="user" className="size-[18px]" /></span>
