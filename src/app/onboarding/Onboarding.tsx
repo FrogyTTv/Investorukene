@@ -87,7 +87,7 @@ export function Onboarding({ setup, onChange, mode, onMode, onDone }: Props) {
         <span className="text-xs text-muted">{step + 1}/{LAST + 1}</span>
       </div>
 
-      <div ref={scroller} className="flex-1 overflow-y-auto px-[22px] py-6 min-[960px]:px-[max(48px,calc(50%-260px))] min-[960px]:pt-16 min-[960px]:pb-4">
+      <div ref={scroller} className="no-scrollbar flex-1 overflow-y-auto px-[22px] py-6 min-[960px]:px-[max(48px,calc(50%-260px))] min-[960px]:pt-16 min-[960px]:pb-4">
         <section key={step} className={`step flex flex-col gap-4 ${backDir ? 'back-dir' : ''}`}>
           {step === 0 && (<>
             <H1>Se pengene dine som et kart.</H1>
